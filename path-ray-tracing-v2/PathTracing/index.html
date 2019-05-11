@@ -43,8 +43,7 @@
             const vec3 boxMin = vec3(-1.0, -1.0, -1.0);
             const vec3 boxMax = vec3(1.0, 1.0, 1.0);
 
-
-            //Calcul la distance entre origin et une sphere Retourne 10000.0 si il n y a pas intersection
+            //Return the distance between origin and a sphere. return 10000.0 if there is no intersection
             float intersectSphere(vec3 dir, vec3 origin, vec3 spherePosition, float sphereRayon)
             {
                 vec3 l = origin - spherePosition;
@@ -63,7 +62,7 @@
                 return 10000.0;
             }
 
-            //Calcul la distance entre origin et un cube
+            //retun the distance between origin and a cube
             float intersectCube(vec3 dir, vec3 origin, vec3 cubeMin, vec3 cubeMax)
             {
                 vec3 tMin = (cubeMin - origin) / dir;
@@ -75,13 +74,13 @@
                 return (tNear >= tFar) ? tNear : tFar;
             }
 
-            //Calcul la normale d'un point sur une sphere
+            //return the distance between a point and a sphere
             vec3 normalForSphere(vec3 hit, vec3 spherePosition, float sphereRayon)
             {
                 return (hit - spherePosition) / sphereRayon;
             }
 
-            //Calcul la normale  d'un point sur un cube
+            //return the normal of a point on a cube
             vec3 normalForCube(vec3 hit, vec3 cubeMin, vec3 cubeMax)
             {
                 vec3 normal = vec3(0.0, 0.0, 0.0);
@@ -114,7 +113,7 @@
                 return normal;
             }
 
-            //calcule le coefficient d'ombre (0.1 si ombre - 1.0 si pas ombre)
+            //retrun the shadow coefficient (0.1 if shadow, 1.0 if not shadow)
             float shadow(vec3 origin, vec3 dir)
             {
                 float tSphere1 = intersectSphere(dir, origin, uSpherePos1, sphereRayon);
@@ -136,7 +135,7 @@
                 }
             }
 
-            //Calcule un vecteur random dans un hemisphere
+            //return a random vector in a half sphere
             vec3 uniformSampleHemisphere(float r1,float r2)
             {
                 float sinTheta = sqrt(1.0 - r1 * r1);
@@ -146,13 +145,13 @@
                 return vec3(x, r1, z);
             }
 
-            //Calcul un nombre random à partir de la positon du pixel et un seed
+            //return a random number from seed
             float random(vec3 scale, float seed)
             {
                 return fract(sin(mod(dot(gl_FragCoord.xyz+seed, scale),pi)) * (43758.5453 + seed) );
             }
 
-            //Calcule la prochaine direction du rayon de lumiere dans la scene de maniere diffuse
+            //return the next direction of a ray of light in a scene in a diffuse way
             vec3 getNextDir(vec3 normal, float seed)
             {
                 vec3 Nt, Nb;
@@ -173,33 +172,33 @@
             }
 
 
-            //Boucle de calcul principale du raytracing
+            //Main ray tracing loop
             vec3 raytrace(vec3 dir, vec3 origin, float index)
             {
                 vec3 color = vec3(0.0);
                 vec3 surfaceColor = vec3(0.8);
                 float distanceFromTheLight = 0.0;
 
-                //Test si le rayon intersecte avec la sphere de la lumiere
+                //tests if the ray intersects with the light source
                 float tlight = intersectSphere(dir, origin, uLightPos, lightRayon*5.0);
                 if(tlight < 10000.0)
                 {
-                    //si il y a une intersection on retoune directement la couleur du pixel (blanc)
+                    //if intersect light source, pixel is white
                     return vec3(1.0);
                 }
 
-                //Debut de la boucle de raytracing
+                //Start main loop
                 for(float i=1.0; i < 1000.0; i+=1.0)
                 {
-                    //Astuce dégueulasse pour definir le nombres maximum de rebonds (On ne peut pas utiliser une variable uniform dans une condition de boucle const uniquement)
+                    //trick to test bounce number (we cant use a uniform variable in a loop)
                     if(i <= uBounce)
                     {
-                        //On calcul toutes les intersections possibles avec les objects de la scène
+                        //Test all possible intersections with scene items
                         float tBox = intersectCube(dir, origin, boxMin, boxMax);
                         float tsphere1 = intersectSphere(dir, origin, uSpherePos1, sphereRayon);
                         float tsphere2 = intersectSphere(dir, origin, uSpherePos2, sphereRayon);
 
-                        //On teste si lequel est le point d'intersection visible (le plus proche)
+                        //test which intersections is the nearest
                         float t = 10000.0;
                         if(tBox < t)
                         {
@@ -214,10 +213,10 @@
                             t = tsphere2;
                         }
 
-                        //On calcule les coordonées du point d'intersection
+                        //coordinates of intersection
                         vec3 hit = origin + dir * t;
 
-                        //On calcule la distance entre le point et la lumière pour appliquer la Loi en carré inverse
+                        //Distance between lignt and point
                         vec3 lightToHit = normalize(uLightPos - hit);
                         if(i == 1.0)
                         {
@@ -229,31 +228,31 @@
                         }
 
 
-                        //On calcule la normale au point d'intersection
+                        //normal at the intersection point
                         vec3 normal;
                         if (t == tBox)
                         {
-                            //normale inverse pour avoir l'interieur du cube
+                            //inversed, to have the inside of the cube
 
                             normal = -normalForCube(hit, boxMin, boxMax);
                             if(hit.x < boxMin.x + 0.00001)
                             {
-                                //vert
+                                //green
                                 surfaceColor = vec3(0.2, 1.0, 0.2);
                             }
                             else if(hit.x > boxMax.x - 0.00001)
                             {
-                                //rouge
+                                //red
                                 surfaceColor = vec3(1.0, 0.1, 0.1);
                             }
                             else if(hit.z < boxMin.z + 0.00001)
                             {
-                                //bleu
+                                //blue
                                 surfaceColor = vec3(0.1, 0.5, 1.0);
                             }
                             else if(hit.z > boxMax.z - 0.00001)
                             {
-                                //jaune
+                                //yellow
                                 surfaceColor = vec3(1.0, 0.9, 0.1);
                             }
 
@@ -262,26 +261,26 @@
                         if(t == tsphere1)
                         {
                             normal = normalForSphere(hit, uSpherePos1, sphereRayon);
-                            //blanc
+                            //white
                             surfaceColor = vec3(1.0);
                         }
                         
                         if(t == tsphere2)
                         {
                             normal = normalForSphere(hit, uSpherePos2, sphereRayon);
-                            //blanc
+                            //white
                             surfaceColor = vec3(1.0);
                         }
 
-                        //On peut calculer les coefficient des couleurs, l'intensite lumineuse, la diffusion, et l'intensite de l'ombre
+                        //We can process the color coefficients, brightness, diffusion and shadow intensity
                         float lightIntensity = 7.0 / (4.0 * pi * distanceFromTheLight);
                         float diffuse = max(0.0, dot(lightToHit, normal));
                         float shadowIntensity = shadow(hit + normal*0.00001, lightToHit);
 
-                        //Accumulation de la couleur du pixel
+                        //Accumulation of the color of the pixel
                         color += surfaceColor * diffuse * shadowIntensity * lightIntensity * 1.0/i;
 
-                        //Calcul de la nouvelle direction et du nouveau point
+                        //processing of the new direction and new point
                         dir = getNextDir(normal, i + index);
                         origin=hit;
 
@@ -304,7 +303,7 @@
                 vec3 dir =  vec3(vec4(uDir,0)*uMVMatrix);
                 vec3 ori =  vec3(vec4(uOri,0)*uMVMatrix);
 
-                //Multi sampling, on calcul plusieur fois l'image puis on fait la moyenne des couleurs
+                //Multi sampling
                 vec3 ray = raytrace(dir,ori,0.0);
                 vec3 ray11 = raytrace(vec3(dir.x+0.001,dir.y+0.001,dir.z),ori,2.0);
                 vec3 ray10 = raytrace(vec3(dir.x+0.001,dir.y-0.001,dir.z),ori,3.0);
